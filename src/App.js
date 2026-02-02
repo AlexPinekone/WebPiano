@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef} from 'react';
 
 function App() {
   const [activeKeys, setActiveKeys] = useState(new Set()); // Esto se cambió a un Set, para poder tocar múltiples teclas al mismo tiempo 
-  const [volume, setVolume] = useState(0.3);
+  const [volume, setVolume] = useState(0.2);
   const audioContextRef = useRef(null);
   const activeOscillatorsRef = useRef({}); // Para rastrear osciladores activos
   const pressedKeysRef = useRef(new Set()); // Para evitar repetición de teclas
@@ -23,19 +23,19 @@ function App() {
 
   // Frecuencias de las notas Hz
   const noteFrequencies = {
-    'do': 261.63,
-    'do#': 277.18,
-    're': 293.66,
-    're#': 311.13,
-    'mi': 329.63,
-    'fa': 349.23,
-    'fa#': 369.99,
-    'sol': 392.00,
-    'sol#': 415.30,
-    'la': 440.00,
-    'la#': 466.16,
-    'si': 493.88
-  };
+  'do': 65.41,    // C2
+  'do#': 69.30,   // C#2
+  're': 73.42,    // D2
+  're#': 77.78,   // D#2
+  'mi': 82.41,    // E2
+  'fa': 87.31,    // F2
+  'fa#': 92.50,   // F#2
+  'sol': 98.00,   // G2
+  'sol#': 103.83, // G#2
+  'la': 110.00,   // A2
+  'la#': 116.54,  // A#2
+  'si': 123.47    // B2
+};
 
   //First piano notes
   const whiteKeys = [
@@ -69,7 +69,7 @@ function App() {
     const gainNode = audioContext.createGain();
 
     // Configurar el tipo de onda y frecuencia (Seno para que sea suave como un piano )
-    oscillator.type = 'sine';
+    oscillator.type = 'triangle';
     oscillator.frequency.setValueAtTime(noteFrequencies[note], audioContext.currentTime);
 
     // Ataque suave con el volumen configurado
