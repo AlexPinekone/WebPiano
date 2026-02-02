@@ -1,38 +1,156 @@
 .App {
-  text-align: center;
+	text-align: center;
+	padding: 40px 20px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
 }
 
 .App-logo {
-  height: 40vmin;
-  pointer-events: none;
+	height: 40vmin;
+	pointer-events: none;
+}
+
+h1 {
+	color: white;
+	font-size: 2.5rem;
+	margin-bottom: 40px;
+	text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.piano {
+	position: relative;
+	width: 700px;
+	height: 300px;
+	background: #1a1a1a;
+	border-radius: 10px;
+	padding: 20px;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.white-keys {
+	display: flex;
+	gap: 4px;
+	height: 100%;
+}
+
+.white-key {
+	flex: 1;
+	background: white;
+	border: 2px solid #333;
+	border-radius: 0 0 8px 8px;
+	cursor: pointer;
+	transition: all 0.1s;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	align-items: center;
+	padding-bottom: 20px;
+	position: relative;
+}
+
+.white-key:hover {
+	background: #f0f0f0;
+	transform: translateY(2px);
+}
+
+.white-key.active {
+	background: #ffd700;
+	transform: translateY(4px);
+}
+
+.black-keys {
+	position: absolute;
+	top: 20px;
+	left: 20px;
+	right: 20px;
+	height: 60%;
+	pointer-events: none;
+}
+
+.black-key {
+	position: absolute;
+	width: 8%;
+	height: 100%;
+	background: linear-gradient(180deg, #000 0%, #333 100%);
+	border: 2px solid #000;
+	border-radius: 0 0 6px 6px;
+	cursor: pointer;
+	pointer-events: all;
+	transition: all 0.1s;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	padding-bottom: 10px;
+	color: white;
+}
+
+.black-key:hover {
+	background: linear-gradient(180deg, #222 0%, #555 100%);
+	transform: translateY(2px);
+}
+
+.black-key.active {
+	background: #ff6b6b;
+	transform: translateY(4px);
+}
+
+.note-label {
+	font-size: 1rem;
+	font-weight: bold;
+	color: #9a83cf;
+	margin-bottom: 5px;
+}
+
+.key-label {
+	font-size: 0.9rem;
+	color: #666;
+	background: rgba(0, 0, 0, 0.05);
+	padding: 3px 8px;
+	border-radius: 4px;
+}
+
+.black-key .key-label {
+	color: #ccc;
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.instructions {
+	color: white;
+	margin-top: 30px;
+	font-size: 1.1rem;
+	text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+	.App-logo {
+		animation: App-logo-spin infinite 20s linear;
+	}
 }
 
 .App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+	background-color: #282c34;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	font-size: calc(10px + 2vmin);
+	color: white;
 }
 
 .App-link {
-  color: #61dafb;
+	color: #61dafb;
 }
 
 @keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
 }
