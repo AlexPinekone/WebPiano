@@ -4,9 +4,11 @@ import React, { useState, useEffect, useRef} from 'react';
 
 function App() {
   const [activeKeys, setActiveKeys] = useState(new Set()); // Esto se cambió a un Set, para poder tocar múltiples teclas al mismo tiempo 
+  const [volume, setVolume] = useState(0.3);
   const audioContextRef = useRef(null);
   const activeOscillatorsRef = useRef({}); // Para rastrear osciladores activos
   const pressedKeysRef = useRef(new Set()); // Para evitar repetición de teclas
+
 
   //Incializar el audio para Web Audio API (AudioContext) o Safari y otros navegadores viejos (webkitAudioContext)
   useEffect(() => {
@@ -70,9 +72,9 @@ function App() {
     oscillator.type = 'sine';
     oscillator.frequency.setValueAtTime(noteFrequencies[note], audioContext.currentTime);
 
-    // Configurar el volumen con envelope (ataque) 
+    // Ataque suave con el volumen configurado
     gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+    gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
 
     // Conectar oscilador -> ganancia -> salida
     oscillator.connect(gainNode);
@@ -95,7 +97,7 @@ function App() {
     const audioContext = audioContextRef.current;
     if (!audioContext) return;
 
-    // Aplicar decaimiento suave
+    // Decaimiento suave
     nodes.gainNode.gain.cancelScheduledValues(audioContext.currentTime);
     nodes.gainNode.gain.setValueAtTime(nodes.gainNode.gain.value, audioContext.currentTime);
     nodes.gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
@@ -167,11 +169,29 @@ function App() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [volume]); // Agregado volume a las dependencias
 
   return (
     <div className="App">
-      <h1>🎹 Tremendo Piano</h1>
+      <h1>Super Piano</h1>
+
+      {/* Volumen */}
+      <div className="controls">
+        <div className="volume-control">
+          <label htmlFor="volume">
+            Volumen: {Math.round(volume * 100)}%
+          </label>
+          <input
+            id="volume"
+            type="range"
+            min="0"
+            max="100"
+            value={volume * 100}
+            onChange={(e) => setVolume(e.target.value / 100)}
+            className="volume-slider"
+          />
+        </div>
+      </div>
 
       <div className="piano">
         <div className="white-keys">
