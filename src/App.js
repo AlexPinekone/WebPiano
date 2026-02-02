@@ -3,8 +3,10 @@ import './App.css';
 import React, { useState, useEffect, useRef} from 'react';
 
 function App() {
-  const [activeKey, setActiveKey] = useState(null);
+  const [activeKeys, setActiveKeys] = useState(new Set()); // Esto se cambió a un Set, para poder tocar múltiples teclas al mismo tiempo 
   const audioContextRef = useRef(null);
+  const activeOscillatorsRef = useRef({}); // Para rastrear osciladores activos
+  const pressedKeysRef = useRef(new Set()); // Para evitar repetición de teclas
 
   //Incializar el audio para Web Audio API (AudioContext) o Safari y otros navegadores viejos (webkitAudioContext)
   useEffect(() => {
@@ -46,33 +48,31 @@ function App() {
 
   //The sharp notes
   const blackKeys = [
-    {note: 'do#', key: 'w', position: 1},
-    {note: 're#', key: 'e', position: 2},
-    {note: 'fa#', key: 't', position: 4},
-    {note: 'sol#', key: 'y', position: 5},
-    {note: 'la#', key: 'u', position: 6},
+    {note: 'do#', key: 'w'},
+    {note: 're#', key: 'e'},
+    {note: 'fa#', key: 't'},
+    {note: 'sol#', key: 'y'},
+    {note: 'la#', key: 'u'},
   ];
 
-  const playSound = (note) => {
-    setActiveKey(note);
-    console.log(`Note: ${note}`);
+  const startNote = (note) => {
+    // Si la nota ya está sonando, no hacer nada, asi no hace brrbbrbrbrrb to' feo
+    if (activeOscillatorsRef.current[note]) return;
 
     const audioContext = audioContextRef.current;
     if (!audioContext) return;
 
-    // Crear oscilador para el sonido (crear sonido)
+    // Crear oscilador para el sonido (generar vibraciones)
     const oscillator = audioContext.createOscillator();
-    // Crear nodo de ganancia para controlar el volumen
     const gainNode = audioContext.createGain();
 
     // Configurar el tipo de onda y frecuencia (Seno para que sea suave como un piano )
     oscillator.type = 'sine';
     oscillator.frequency.setValueAtTime(noteFrequencies[note], audioContext.currentTime);
 
-     // Configurar el volumen con envelope (ataque y decaimiento) <- Para que suene y luego caiga
+    // Configurar el volumen con envelope (ataque) 
     gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01); // Ataque
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.5); // Decaimiento
+    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
 
     // Conectar oscilador -> ganancia -> salida
     oscillator.connect(gainNode);
@@ -80,46 +80,109 @@ function App() {
 
     // Reproducir el sonido
     oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 1.5);
 
-    // Quitar efecto visual
-    setTimeout(() => setActiveKey(null), 200);
+    // Guardar referencia al oscilador y gainNode
+    activeOscillatorsRef.current[note] = { oscillator, gainNode };
+
+    // Actualizar teclas activas visualmente
+    setActiveKeys(prev => new Set([...prev, note]));
+  };
+
+  const stopNote = (note) => {
+    const nodes = activeOscillatorsRef.current[note];
+    if (!nodes) return;
+
+    const audioContext = audioContextRef.current;
+    if (!audioContext) return;
+
+    // Aplicar decaimiento suave
+    nodes.gainNode.gain.cancelScheduledValues(audioContext.currentTime);
+    nodes.gainNode.gain.setValueAtTime(nodes.gainNode.gain.value, audioContext.currentTime);
+    nodes.gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+    // Detener el oscilador después del decaimiento
+    nodes.oscillator.stop(audioContext.currentTime + 0.3);
+
+    // Limpiar la referencia
+    delete activeOscillatorsRef.current[note];
+
+    // Actualizar teclas activas visualmente
+    setActiveKeys(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(note);
+      return newSet;
+    });
+  };
+
+  const playSound = (note) => {
+    startNote(note);
+    // Detener automáticamente después de un tiempo para clicks del mouse
+    setTimeout(() => stopNote(note), 300);
   };
 
   // Manejar eventos del teclado
   useEffect(() => {
     const handleKeyDown = (event) => {
+      // Evitar repetición cuando se mantiene presionada la tecla
+      if (event.repeat) return;
+
       const key = event.key.toLowerCase();
+      
+      // Evitar que se active múltiples veces
+      if (pressedKeysRef.current.has(key)) return;
+      pressedKeysRef.current.add(key);
       
       // Buscar la nota correspondiente a la tecla presionada
       const whiteKey = whiteKeys.find(k => k.key === key);
       const blackKey = blackKeys.find(k => k.key === key);
       
       if (whiteKey) {
-        playSound(whiteKey.note);
+        startNote(whiteKey.note);
       } else if (blackKey) {
-        playSound(blackKey.note);
+        startNote(blackKey.note);
+      }
+    };
+
+    const handleKeyUp = (event) => {
+      const key = event.key.toLowerCase();
+      
+      // Remover de teclas presionadas
+      pressedKeysRef.current.delete(key);
+      
+      // Buscar la nota correspondiente
+      const whiteKey = whiteKeys.find(k => k.key === key);
+      const blackKey = blackKeys.find(k => k.key === key);
+      
+      if (whiteKey) {
+        stopNote(whiteKey.note);
+      } else if (blackKey) {
+        stopNote(blackKey.note);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
 
   return (
     <div className="App">
-      <h1>Super Piano</h1>
+      <h1>🎹 Tremendo Piano</h1>
 
       <div className="piano">
-        <div class="white-keys">
+        <div className="white-keys">
           {whiteKeys.map((key) => (
             <button
             key={key.note}
-            className={'white-key ' + (key.note === activeKey ? 'active' : '')}
-            onClick={() => playSound(key.note)}
+            className={'white-key ' + (activeKeys.has(key.note) ? 'active' : '')}
+            onMouseDown={() => startNote(key.note)}
+            onMouseUp={() => stopNote(key.note)}
+            onMouseLeave={() => stopNote(key.note)}
+            onClick={(e) => e.preventDefault()} // Evitar doble activación
             >
               <span className="note-label">{key.note}</span>
               <span className="key-label">({key.key})</span>
@@ -127,25 +190,26 @@ function App() {
           ))}
         </div>
       
-
-      <div className="black-keys">
-        {blackKeys.map((key) => (
-          <button
-            key={key.note}
-            className={'black-key ' + (key.note === activeKey ? ' active' : '')}
-            onClick={() => playSound(key.note)}
-            style = {{left: `${key.position * 14.28 - 2}%`}}
-          >
-            <span className="note-label">{key.note}</span>
-            <span className="key-label">({key.key})</span>
-          </button>
-        ))}
+        <div className="black-keys">
+          {blackKeys.map((key, index) => (
+            <button
+              key={key.note}
+              className={'black-key ' + (activeKeys.has(key.note) ? 'active' : '')}
+              onMouseDown={() => startNote(key.note)}
+              onMouseUp={() => stopNote(key.note)}
+              onMouseLeave={() => stopNote(key.note)}
+              onClick={(e) => e.preventDefault()}
+              style={{left: `${[1, 2, 4, 5, 6][index] * 14.28 - 2}%`}}
+            >
+              <span className="key-label">({key.key})</span>
+            </button>
+          ))}
+        </div>
       </div>
-      </div>
+      
       <p className="instructions">
-        Haz clic en las teclas o usa el teclado (a, s, d, f, g, h, j para blancas / w, e, t, y, u para negras)
+        Teclas blancas: A, S, D, F, G, H, J | Teclas negras: W, E, T, Y, U
       </p>
-
     </div>
   );
 }
